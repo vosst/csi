@@ -1,4 +1,4 @@
-package main
+package crash
 
 import (
 	"bytes"
@@ -73,15 +73,16 @@ var UnacceptableFields = map[string]struct{}{
 var ErrHostNotReachable = errors.New("Destination is not reachable")
 var ErrWillNotSendViaWWAN = errors.New("Destination Host is only available via WWAN.")
 
-// HttpCrashReporterPersister persists incoming crash reports to launchpad.
-type HttpCrashReportPersister struct {
-	SubmitURL           url.URL             // URL for sending the crash report to
-	ReachabilityMonitor ReachabilityMonitor // Monitors whether SubmitURL is reachable.
-	Client              *http.Client        // HTTP client instance for reaching out to the crash db service
+// HttpReporterPersister persists incoming crash reports to launchpad.
+type HttpReportPersister struct {
+	SubmitURL       url.URL // URL for sending the crash report to
+	WhoopsieVersion string  // WhoopsieVersion field that is communicated to the server on upload.
+	// ReachabilityMonitor ReachabilityMonitor // Monitors whether SubmitURL is reachable.
+	Client *http.Client // HTTP client instance for reaching out to the crash db service
 }
 
 // filterField returns true if the given (key, value) pair should be filtered out.
-func (self HttpCrashReportPersister) filterField(k string, v []string) bool {
+func (self HttpReportPersister) filterField(k string, v []string) bool {
 	if len(v) == 0 {
 		return true
 	}
@@ -99,7 +100,7 @@ func (self HttpCrashReportPersister) filterField(k string, v []string) bool {
 
 // marshalToBSON walks the given report, filtering out all invalid fields
 // and encodes the resulting filtered map to BSON.
-func (self HttpCrashReportPersister) marshalToBSON(report CrashReport) ([]byte, error) {
+func (self HttpReportPersister) marshalToBSON(report Report) ([]byte, error) {
 	filtered := make(map[string]string)
 
 	for k, v := range report {
@@ -111,8 +112,8 @@ func (self HttpCrashReportPersister) marshalToBSON(report CrashReport) ([]byte, 
 	return bson.Marshal(filtered)
 }
 
-func (self HttpCrashReportPersister) Persist(report CrashReport) error {
-	reachability := self.ReachabilityMonitor.CheckHostReachability(self.SubmitURL.Host)
+func (self HttpReportPersister) Persist(report Report) error {
+	/*reachability := self.ReachabilityMonitor.CheckHostReachability(self.SubmitURL.Host)
 
 	if reachability == NotReachable {
 		return ErrHostNotReachable
@@ -121,10 +122,11 @@ func (self HttpCrashReportPersister) Persist(report CrashReport) error {
 	if reachability&IsWWAN == IsWWAN {
 		return ErrWillNotSendViaWWAN
 	}
+	*/
 
 	bson, _ := self.marshalToBSON(report)
 	req, _ := http.NewRequest("POST", self.SubmitURL.String(), bytes.NewReader(bson))
-	req.Header.Add("X-Whoopsie-Version", CurrentVersion.String())
+	req.Header.Add("X-Whoopsie-Version", self.WhoopsieVersion)
 
 	if resp, err := self.Client.Do(req); err == nil {
 		// We received a response and try to interpret it further
@@ -142,7 +144,7 @@ func (self HttpCrashReportPersister) Persist(report CrashReport) error {
 			if len(core) > 0 && len(arch) > 0 {
 				coreURL := fmt.Sprintf("%s/%s/submit-core/%s/%s", self.SubmitURL, "uuid", arch, "id")
 				req, err = http.NewRequest("POST", coreURL, strings.NewReader(core))
-				req.Header.Add("X-Whoopsie-Version", CurrentVersion.String())
+				req.Header.Add("X-Whoopsie-Version", self.WhoopsieVersion)
 				resp, err = self.Client.Do(req)
 
 			}

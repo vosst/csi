@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/vosst/csi/crash"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -40,7 +41,7 @@ func actionList(c *cli.Context) {
 		}
 
 		defer f.Close()
-		report, err := ParseCrashReport(NewLineReader{f})
+		report, err := crash.ParseReport(NewLineReader{f})
 
 		if err != nil {
 			fmt.Fprintf(out, "  %s %s: Failed to parse crash report - %s\n", bullet, entry.Name(), err)
