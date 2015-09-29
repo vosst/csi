@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/vosst/csi/crash"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -31,7 +32,7 @@ func actionUpload(c *cli.Context) {
 		return
 	}
 
-	persister := HttpCrashReportPersister{*u, AlwaysReachableReachabilityMonitor{}, &http.Client{}}
+	persister := crash.HttpReportPersister{*u, "0.0.1", &http.Client{}}
 
 	for _, entry := range entries {
 		fn := filepath.Join(crashDir, entry.Name())
@@ -45,7 +46,7 @@ func actionUpload(c *cli.Context) {
 		}
 
 		defer f.Close()
-		report, err := ParseCrashReport(NewLineReader{f})
+		report, err := crash.ParseReport(NewLineReader{f})
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "  Failed to parse crash report.")

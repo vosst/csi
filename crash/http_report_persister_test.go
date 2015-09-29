@@ -1,4 +1,4 @@
-package main
+package crash
 
 import (
 	"io/ioutil"
