@@ -10,7 +10,7 @@ import (
 // trying to load first prior to dispatching to a
 // subsequent MachineIdentifier
 type CachingIdentifier struct {
-	Identifier MachineIdentifier
+	Identifier Identifier
 	Dir        string
 	File       string
 }
