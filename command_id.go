@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/vosst/csi/machine"
 	"os"
 )
 
 func actionId(c *cli.Context) {
-	mi, err := DefaultMachineIdentifier()
+	mi, err := machine.DefaultIdentifier()
 	if err == nil {
 		id, err := mi.Identify()
 		if err == nil {
