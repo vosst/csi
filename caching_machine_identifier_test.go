@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +14,7 @@ import (
 const testDir = "/tmp"
 const testFile = "testId"
 
-var testFn = fmt.Sprintf("%s/%s", testDir, testFile)
+var testFn = filepath.Join(testDir, testFile)
 
 func TestCachingMachineIdentifierPrefersValueStoredInFile(t *testing.T) {
 	os.Remove(testFn)

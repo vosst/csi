@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 // CachineMachineIdentifier stores an id in a file,
@@ -19,7 +19,7 @@ type CachingMachineIdentifier struct {
 // is stored, yet, it dispatches to a subsequent identifier, storing its
 // result.
 func (self CachingMachineIdentifier) Identify() ([]byte, error) {
-	path := fmt.Sprintf("%s/%s", self.Dir, self.File)
+	path := filepath.Join(self.Dir, self.File)
 	f, err := os.Open(path)
 
 	if err == nil {
@@ -33,7 +33,7 @@ func (self CachingMachineIdentifier) Identify() ([]byte, error) {
 		return nil, err
 	}
 
-	tmpPath := fmt.Sprintf("%s/whoopsie-temp", self.Dir)
+	tmpPath := filepath.Join(self.Dir, "whoopsie-temp")
 
 	f, err = os.Create(tmpPath)
 
