@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 // See include/uapi/linux/if_arp.h
@@ -29,7 +30,7 @@ func (self MACAddressMachineIdentifier) Identify() ([]byte, error) {
 			continue
 		}
 
-		t, err := os.Open(fmt.Sprintf("%s/%s/type", self.sysFsDirectory, e.Name()))
+		t, err := os.Open(filepath.Join(self.sysFsDirectory, e.Name(), "type"))
 		if err != nil {
 			continue
 		}
@@ -47,7 +48,7 @@ func (self MACAddressMachineIdentifier) Identify() ([]byte, error) {
 			continue
 		}
 
-		a, err := os.Open(fmt.Sprintf("%s/%s/address", self.sysFsDirectory, e.Name()))
+		a, err := os.Open(filepath.Join(self.sysFsDirectory, e.Name(), "address"))
 
 		if err != nil {
 			continue

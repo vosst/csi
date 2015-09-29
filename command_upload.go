@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 )
 
 var (
@@ -33,7 +34,7 @@ func actionUpload(c *cli.Context) {
 	persister := HttpCrashReportPersister{*u, AlwaysReachableReachabilityMonitor{}, &http.Client{}}
 
 	for _, entry := range entries {
-		fn := fmt.Sprintf("%s/%s", crashDir, entry.Name())
+		fn := filepath.Join(crashDir, entry.Name())
 
 		fmt.Fprintf(os.Stdout, "Processing %s ...", fn)
 

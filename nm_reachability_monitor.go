@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/vosst/whoopsie/nm"
+	"github.com/vosst/csi/nm"
 	"launchpad.net/go-dbus/v1"
 )
 
