@@ -1,4 +1,4 @@
-package main
+package machine
 
 import (
 	"fmt"
@@ -10,15 +10,15 @@ import (
 // See include/uapi/linux/if_arp.h
 const ethernetDeviceType = 1
 
-type MACAddressMachineIdentifier struct {
+type MACAddressIdentifier struct {
 	sysFsDirectory string // Base directory that is explored for available network interfaces.
 }
 
-func NewMACAddressMachineIdentifier() MACAddressMachineIdentifier {
-	return MACAddressMachineIdentifier{"/sys/class/net"}
+func NewMACAddressIdentifier() MACAddressIdentifier {
+	return MACAddressIdentifier{"/sys/class/net"}
 }
 
-func (self MACAddressMachineIdentifier) Identify() ([]byte, error) {
+func (self MACAddressIdentifier) Identify() ([]byte, error) {
 	entries, err := ioutil.ReadDir(self.sysFsDirectory)
 
 	if err != nil {

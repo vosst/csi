@@ -1,4 +1,4 @@
-package main
+package machine
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ const testFile = "testId"
 
 var testFn = filepath.Join(testDir, testFile)
 
-func TestCachingMachineIdentifierPrefersValueStoredInFile(t *testing.T) {
+func TestCachingIdentifierPrefersValueStoredInFile(t *testing.T) {
 	os.Remove(testFn)
 
 	f, err := os.Create(testFn)
@@ -36,7 +36,7 @@ func TestCachingMachineIdentifierPrefersValueStoredInFile(t *testing.T) {
 	assert.Equal(t, uint64(42), value, "IDs do not match")
 }
 
-func TestCachingMachineIdentifierCallsIntoNext(t *testing.T) {
+func TestCachingIdentifierCallsIntoNext(t *testing.T) {
 	os.Remove(testFn)
 
 	mmi := MockMachineIdentifier{}
@@ -49,7 +49,7 @@ func TestCachingMachineIdentifierCallsIntoNext(t *testing.T) {
 	mmi.AssertExpectations(t)
 }
 
-func TestCachingMachineIdentifierStoresResultOfCallToNext(t *testing.T) {
+func TestCachingIdentifierStoresResultOfCallToNext(t *testing.T) {
 	os.Remove(testFn)
 
 	mmi := MockMachineIdentifier{}

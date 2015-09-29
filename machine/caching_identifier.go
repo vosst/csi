@@ -1,4 +1,4 @@
-package main
+package machine
 
 import (
 	"io/ioutil"
@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 )
 
-// CachineMachineIdentifier stores an id in a file,
+// CachingIdentifier stores an id in a file,
 // trying to load first prior to dispatching to a
 // subsequent MachineIdentifier
-type CachingMachineIdentifier struct {
+type CachingIdentifier struct {
 	Identifier MachineIdentifier
 	Dir        string
 	File       string
@@ -18,7 +18,7 @@ type CachingMachineIdentifier struct {
 // Identify tries to load the id from the configured file. If no id
 // is stored, yet, it dispatches to a subsequent identifier, storing its
 // result.
-func (self CachingMachineIdentifier) Identify() ([]byte, error) {
+func (self CachingIdentifier) Identify() ([]byte, error) {
 	path := filepath.Join(self.Dir, self.File)
 	f, err := os.Open(path)
 
