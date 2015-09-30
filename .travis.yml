@@ -3,5 +3,6 @@ script:
         - go test -v
         - go test -v github.com/vosst/csi/machine
         - go test -v github.com/vosst/csi/crash  
+        - go test -v github.com/vosst/csi/cmd
 notifications:
 email: false
