@@ -2,6 +2,7 @@ package crash
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -10,8 +11,13 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/vosst/csi/machine"
 	"labix.org/v2/mgo/bson"
 )
+
+// We have to submit a whoopsie version field when uploading to
+// the crash handling infrastructure.
+const whoopsieVersion = "0.2.49"
 
 // All the fields we will unconditionally accept for upload,
 // no matter their size.
@@ -70,14 +76,11 @@ var UnacceptableFields = map[string]struct{}{
 	"Title":              struct{}{},
 }
 
-var ErrHostNotReachable = errors.New("Destination is not reachable")
-var ErrWillNotSendViaWWAN = errors.New("Destination Host is only available via WWAN.")
-
 // HttpReporterPersister persists incoming crash reports to launchpad.
 type HttpReportPersister struct {
-	SubmitURL       url.URL      // URL for sending the crash report to
-	WhoopsieVersion string       // WhoopsieVersion field that is communicated to the server on upload.
-	Client          *http.Client // HTTP client instance for reaching out to the crash db service
+	SubmitURL  url.URL            // URL for sending the crash report to
+	Identifier machine.Identifier // Identifier helps in generating a globally unique device id
+	Client     *http.Client       // HTTP client instance for reaching out to the crash db service
 }
 
 // filterField returns true if the given (key, value) pair should be filtered out.
@@ -111,48 +114,69 @@ func (self HttpReportPersister) marshalToBSON(report Report) ([]byte, error) {
 	return bson.Marshal(filtered)
 }
 
-func (self HttpReportPersister) Persist(report Report) error {
-	/*reachability := self.ReachabilityMonitor.CheckHostReachability(self.SubmitURL.Host)
-
-	if reachability == NotReachable {
-		return ErrHostNotReachable
+func (self HttpReportPersister) uploadCore(report Report, oopsId string) error {
+	core, contains := report["CoreDump"]
+	if !contains || len(core) == 0 {
+		return errors.New("Missing field CoreDump in report")
 	}
 
-	if reachability&IsWWAN == IsWWAN {
-		return ErrWillNotSendViaWWAN
+	arch, contains := report["Architecture"]
+	if !contains || len(arch) == 0 {
+		return errors.New("Missing field Architecture in report")
 	}
-	*/
 
-	bson, _ := self.marshalToBSON(report)
-	req, _ := http.NewRequest("POST", self.SubmitURL.String(), bytes.NewReader(bson))
-	req.Header.Add("X-Whoopsie-Version", self.WhoopsieVersion)
+	id, err := self.Identifier.Identify()
 
-	if resp, err := self.Client.Do(req); err == nil {
-		// We received a response and try to interpret it further
-		defer resp.Body.Close()
+	if err != nil {
+		return err
+	}
 
-		body, _ := ioutil.ReadAll(resp.Body)
-		fields := strings.Split(string(body), " ")
+	coreURL := fmt.Sprintf("%s/%s/submit-core/%s/%s", self.SubmitURL, oopsId, arch, hex.EncodeToString(id))
+	req, err := http.NewRequest("POST", coreURL, strings.NewReader(core[0]))
+	if err != nil {
+		return err
+	}
 
-		switch fields[0] {
-		case "CORE":
-			log.Print("Server requested upload of coredump")
-			core := report["CoreDump"][0]
-			arch := report["Architecture"][0]
+	// TODO(vosst): add handling of response here.
+	_, err = self.Client.Do(req)
+	return err
+}
 
-			if len(core) > 0 && len(arch) > 0 {
-				coreURL := fmt.Sprintf("%s/%s/submit-core/%s/%s", self.SubmitURL, "uuid", arch, "id")
-				req, err = http.NewRequest("POST", coreURL, strings.NewReader(core))
-				req.Header.Add("X-Whoopsie-Version", self.WhoopsieVersion)
-				resp, err = self.Client.Do(req)
+func (self HttpReportPersister) handleUploadResponse(report Report, response string) error {
+	if len(response) == 0 {
+		return nil
+	}
 
-			}
-		case "OOPSID":
-			log.Printf("Server reported OOPS ID: %s", fields[1])
-		default:
-			log.Printf("Received unhandled command: %s", string(body))
-		}
+	var oopsId, command string
+	if _, err := fmt.Sscanf(response, "%s %s", &oopsId, &command); err != nil {
+		return errors.New("Failed to parse response body")
+	}
+
+	switch command {
+	case "CORE":
+		return self.uploadCore(report, oopsId)
+	case "OOPSID":
+		log.Printf("Server reported OOPS ID: %s", oopsId)
 	}
 
 	return nil
+}
+
+func (self HttpReportPersister) Persist(report Report) error {
+	bson, _ := self.marshalToBSON(report)
+
+	if resp, err := self.Client.Post(self.SubmitURL.String(), "application/octet-stream", bytes.NewReader(bson)); err != nil {
+		fmt.Print(err)
+		return err
+	} else if resp.StatusCode == http.StatusOK {
+		// We received a response and try to interpret it further
+		defer resp.Body.Close()
+		if body, err := ioutil.ReadAll(resp.Body); err != nil {
+			return err
+		} else {
+			return self.handleUploadResponse(report, string(body))
+		}
+	} else {
+		return errors.New(fmt.Sprintf("Received status code %d, indicating an issue with our upload", resp.StatusCode))
+	}
 }

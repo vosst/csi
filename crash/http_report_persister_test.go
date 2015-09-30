@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vosst/csi/machine"
 	"labix.org/v2/mgo/bson"
 )
 
@@ -22,17 +23,18 @@ func TestHttpCrashReportPersisterSendsValidBSON(t *testing.T) {
 			report := make(map[string]interface{})
 			if err := bson.Unmarshal(bytes, report); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
-			} else {
-				w.Write([]byte(`EMPTY`))
 			}
 		}))
 
 		server.Close()
 	}()
 
+	mi := &machine.MockIdentifier{}
+	mi.On("Identify").Return([]byte{42, 42, 42}, nil)
+
 	u, _ := url.Parse("http://localhost:9090")
 
-	persister := HttpReportPersister{*u, "0.0.1", &http.Client{}}
+	persister := HttpReportPersister{*u, mi, &http.Client{}}
 
 	f, _ := os.Open("test_data/test.crash")
 
