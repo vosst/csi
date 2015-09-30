@@ -25,7 +25,7 @@ func TestCachingIdentifierPrefersValueStoredInFile(t *testing.T) {
 	binary.Write(f, binary.LittleEndian, uint64(42))
 	f.Close()
 
-	cmi := CachingMachineIdentifier{nil, testDir, testFile}
+	cmi := CachingIdentifier{nil, testDir, testFile}
 
 	id, err := cmi.Identify()
 
@@ -39,10 +39,10 @@ func TestCachingIdentifierPrefersValueStoredInFile(t *testing.T) {
 func TestCachingIdentifierCallsIntoNext(t *testing.T) {
 	os.Remove(testFn)
 
-	mmi := MockMachineIdentifier{}
+	mmi := MockIdentifier{}
 	mmi.On("Identify").Return([]byte{42}, nil)
 
-	cmi := CachingMachineIdentifier{&mmi, testDir, testFile}
+	cmi := CachingIdentifier{&mmi, testDir, testFile}
 
 	cmi.Identify()
 
@@ -52,10 +52,10 @@ func TestCachingIdentifierCallsIntoNext(t *testing.T) {
 func TestCachingIdentifierStoresResultOfCallToNext(t *testing.T) {
 	os.Remove(testFn)
 
-	mmi := MockMachineIdentifier{}
+	mmi := MockIdentifier{}
 	mmi.On("Identify").Return([]byte{42, 42, 42}, nil)
 
-	cmi := CachingMachineIdentifier{&mmi, testDir, testFile}
+	cmi := CachingIdentifier{&mmi, testDir, testFile}
 
 	cmi.Identify()
 
