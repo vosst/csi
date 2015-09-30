@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/vosst/csi/cmd"
 	"os"
 )
 
@@ -29,9 +30,9 @@ func main() {
 	}
 
 	app.Commands = []cli.Command{
-		CommandId,
-		CommandList,
-		CommandUpload,
+		cmd.Id,
+		cmd.List,
+		cmd.Upload,
 	}
 
 	app.Run(os.Args)

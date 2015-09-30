@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -68,7 +68,7 @@ func actionList(c *cli.Context) {
 	}
 }
 
-var CommandList = cli.Command{
+var List = cli.Command{
 	Name:   "list",
 	Usage:  "lists all crash reports on the system",
 	Flags:  []cli.Flag{listFlagCrashDir},

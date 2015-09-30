@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -76,8 +76,8 @@ func actionUpload(c *cli.Context) {
 	}
 }
 
-// CommandUpload uploads crash reports to the server infrastructure
-var CommandUpload = cli.Command{
+// Command upload uploads crash reports to the server infrastructure
+var Upload = cli.Command{
 	Name:   "upload",
 	Usage:  "uploads crash reports to the server infrastructure",
 	Action: actionUpload,

@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ func actionId(c *cli.Context) {
 }
 
 // Command id prints the sha512 hash of the machine/device id.
-var CommandId = cli.Command{
+var Id = cli.Command{
 	Name:   "id",
 	Usage:  "prints the sha512 hash of the system id",
 	Action: actionId,
