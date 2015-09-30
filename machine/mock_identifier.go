@@ -8,5 +8,12 @@ type MockIdentifier struct {
 
 func (self *MockIdentifier) Identify() ([]byte, error) {
 	args := self.Called()
-	return args.Get(0).([]byte), args.Error(1)
+
+	obj := args.Get(0)
+
+	if obj == nil {
+		return nil, args.Error(1)
+	}
+
+	return obj.([]byte), args.Error(1)
 }
