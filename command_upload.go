@@ -32,16 +32,23 @@ func actionUpload(c *cli.Context) {
 		return
 	}
 
+	fmt.Fprintf(os.Stdout, "Uploading crash reports from %s to %s:\n", crashDir, u.String())
+
 	persister := crash.HttpReportPersister{*u, "0.0.1", &http.Client{}}
 
 	for _, entry := range entries {
 		fn := filepath.Join(crashDir, entry.Name())
 
-		fmt.Fprintf(os.Stdout, "Processing %s ...", fn)
+		if matched, _ := filepath.Match("*.crash", entry.Name()); !matched {
+			// Silently skip over the file.
+			continue
+		}
+
+		out := os.Stdout
 
 		f, err := os.Open(fn)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "  Failed to open crash report.")
+			fmt.Fprintf(out, "  %s %s: Failed to open file - %s\n", bullet, entry.Name(), err)
 			continue
 		}
 
@@ -49,14 +56,14 @@ func actionUpload(c *cli.Context) {
 		report, err := crash.ParseReport(crash.NewLineReader{f})
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "  Failed to parse crash report.")
+			fmt.Fprintf(out, "  %s %s: Failed to parse crash report - %s\n", bullet, entry.Name(), err)
 			continue
 		}
 
 		err = persister.Persist(report)
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "  Failed to upload crash report.")
+			fmt.Fprintf(out, "  %s %s: Failed to upload crash report - %s\n", bullet, entry.Name(), err)
 			continue
 		}
 
@@ -65,7 +72,7 @@ func actionUpload(c *cli.Context) {
 			os.Remove(fn)
 		}
 
-		fmt.Fprintf(os.Stdout, " [\u2713]\n")
+		fmt.Fprintf(out, "  %s %s: Successfully uploaded\n", bullet, entry.Name())
 	}
 }
 
