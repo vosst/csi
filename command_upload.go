@@ -46,7 +46,7 @@ func actionUpload(c *cli.Context) {
 		}
 
 		defer f.Close()
-		report, err := crash.ParseReport(NewLineReader{f})
+		report, err := crash.ParseReport(crash.NewLineReader{f})
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "  Failed to parse crash report.")
