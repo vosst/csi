@@ -68,6 +68,7 @@ func actionList(c *cli.Context) {
 	}
 }
 
+// Command list lists all crash reports on the system
 var List = cli.Command{
 	Name:   "list",
 	Usage:  "lists all crash reports on the system",
