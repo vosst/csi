@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/vosst/csi/crash"
+	"github.com/vosst/csi/machine"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -18,6 +19,13 @@ var (
 )
 
 func actionUpload(c *cli.Context) {
+	mi, err := machine.DefaultIdentifier()
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Could not create default machine identifier")
+		return
+	}
+
 	u, err := url.Parse(c.String(uploadFlagDest.Name))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Destination needs to be a valid url")
@@ -34,7 +42,7 @@ func actionUpload(c *cli.Context) {
 
 	fmt.Fprintf(os.Stdout, "Uploading crash reports from %s to %s:\n", crashDir, u.String())
 
-	persister := crash.HttpReportPersister{*u, "0.0.1", &http.Client{}}
+	persister := crash.HttpReportPersister{*u, mi, &http.Client{}}
 
 	for _, entry := range entries {
 		fn := filepath.Join(crashDir, entry.Name())
