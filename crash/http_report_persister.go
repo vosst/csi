@@ -75,10 +75,9 @@ var ErrWillNotSendViaWWAN = errors.New("Destination Host is only available via W
 
 // HttpReporterPersister persists incoming crash reports to launchpad.
 type HttpReportPersister struct {
-	SubmitURL       url.URL // URL for sending the crash report to
-	WhoopsieVersion string  // WhoopsieVersion field that is communicated to the server on upload.
-	// ReachabilityMonitor ReachabilityMonitor // Monitors whether SubmitURL is reachable.
-	Client *http.Client // HTTP client instance for reaching out to the crash db service
+	SubmitURL       url.URL      // URL for sending the crash report to
+	WhoopsieVersion string       // WhoopsieVersion field that is communicated to the server on upload.
+	Client          *http.Client // HTTP client instance for reaching out to the crash db service
 }
 
 // filterField returns true if the given (key, value) pair should be filtered out.

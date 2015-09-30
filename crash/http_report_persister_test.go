@@ -12,42 +12,6 @@ import (
 	"labix.org/v2/mgo/bson"
 )
 
-func TestHttpCrashReportPersisterChecksForReachability(t *testing.T) {
-	u, _ := url.Parse("http://localhost:9090")
-	mrm := &MockReachabilityMonitor{}
-	mrm.On("CheckHostReachability", "localhost:9090").Return(NotReachable)
-
-	persister := HttpCrashReportPersister{*u, mrm, &http.Client{}}
-
-	f, _ := os.Open("test_data/test.crash")
-
-	report, err := ParseCrashReport(NewLineReader{f})
-	assert.Nil(t, err)
-
-	err = persister.Persist(report)
-	assert.NotNil(t, err)
-
-	mrm.AssertExpectations(t)
-}
-
-func TestHttpCrashReportPersisterDoesNotSendViaWWAN(t *testing.T) {
-	u, _ := url.Parse("http://localhost:9090")
-	mrm := &MockReachabilityMonitor{}
-	mrm.On("CheckHostReachability", "localhost:9090").Return(IsReachable | IsWWAN)
-
-	persister := HttpCrashReportPersister{*u, mrm, &http.Client{}}
-
-	f, _ := os.Open("test_data/test.crash")
-
-	report, err := ParseCrashReport(NewLineReader{f})
-	assert.Nil(t, err)
-
-	err = persister.Persist(report)
-	assert.NotNil(t, err)
-
-	mrm.AssertExpectations(t)
-}
-
 func TestHttpCrashReportPersisterSendsValidBSON(t *testing.T) {
 	go func() {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -67,14 +31,12 @@ func TestHttpCrashReportPersisterSendsValidBSON(t *testing.T) {
 	}()
 
 	u, _ := url.Parse("http://localhost:9090")
-	mrm := &MockReachabilityMonitor{}
-	mrm.On("CheckHostReachability", "localhost:9090").Return(IsReachable)
 
-	persister := HttpCrashReportPersister{*u, mrm, &http.Client{}}
+	persister := HttpReportPersister{*u, "0.0.1", &http.Client{}}
 
 	f, _ := os.Open("test_data/test.crash")
 
-	report, err := ParseCrashReport(NewLineReader{f})
+	report, err := ParseReport(NewLineReader{f})
 	assert.Nil(t, err)
 
 	err = persister.Persist(report)

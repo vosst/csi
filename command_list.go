@@ -41,7 +41,7 @@ func actionList(c *cli.Context) {
 		}
 
 		defer f.Close()
-		report, err := crash.ParseReport(NewLineReader{f})
+		report, err := crash.ParseReport(crash.NewLineReader{f})
 
 		if err != nil {
 			fmt.Fprintf(out, "  %s %s: Failed to parse crash report - %s\n", bullet, entry.Name(), err)
