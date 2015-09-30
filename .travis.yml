@@ -1,4 +1,7 @@
 language: go
-script: go test -v
+script:
+        - go test -v
+        - go test -v machine
+        - go test -v crash  
 notifications:
 email: false
