@@ -7,18 +7,6 @@ import (
 	"os"
 )
 
-type Version struct {
-	major int
-	minor int
-	patch int
-}
-
-func (self Version) String() string {
-	return fmt.Sprintf("%d.%d.%d", self.major, self.minor, self.patch)
-}
-
-var CurrentVersion = Version{0, 0, 1}
-
 func main() {
 	app := cli.NewApp()
 	app.Name = "csi"
