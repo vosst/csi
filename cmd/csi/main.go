@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/vosst/csi/cmd"
+	"github.com/vosst/csi/cmd/csi/command"
 	"os"
 )
 
@@ -17,9 +17,9 @@ func main() {
 	}
 
 	app.Commands = []cli.Command{
-		cmd.Id,
-		cmd.List,
-		cmd.Upload,
+		command.Id,
+		command.List,
+		command.Upload,
 	}
 
 	app.Run(os.Args)
