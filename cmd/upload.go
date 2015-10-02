@@ -5,7 +5,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/vosst/csi/crash"
 	"github.com/vosst/csi/machine"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,6 +17,31 @@ var (
 	uploadFlagCrashDir = cli.StringFlag{"crash-dir", "/var/crash", "directory containing crash files", ""}
 	uploadFlagCleanup  = cli.BoolFlag{"cleanup", "deletes crash reports after successful upload", ""}
 )
+
+type UploadingVisitor struct {
+	CrashDir  string                // The directory containing crashes
+	Out       io.Writer             // Destination for output
+	Persister crash.ReportPersister // Persister provides persistence of crash reports.
+	Cleanup   bool                  // If true, successfully uploaded crash reports are deleted.
+}
+
+func (self UploadingVisitor) NewReport(name string, report crash.Report) {
+	err := self.Persister.Persist(report)
+
+	if err != nil {
+		fmt.Fprintf(self.Out, "  %s %s: Failed to upload crash report - %s\n", bullet, name, err)
+		return
+	}
+
+	fmt.Fprintf(self.Out, "  %s %s: Successfully uploaded\n", bullet, name)
+
+	if self.Cleanup {
+		os.Remove(filepath.Join(self.CrashDir, name))
+	}
+}
+
+func (self UploadingVisitor) NewError(err error) {
+}
 
 func actionUpload(c *cli.Context) {
 	mi, err := machine.DefaultIdentifier()
@@ -33,55 +58,9 @@ func actionUpload(c *cli.Context) {
 	}
 
 	crashDir := c.String(uploadFlagCrashDir.Name)
-	entries, err := ioutil.ReadDir(crashDir)
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to list files in %s (%s)\n", crashDir, err)
-		return
-	}
-
-	fmt.Fprintf(os.Stdout, "Uploading crash reports from %s to %s:\n", crashDir, u.String())
-
 	persister := crash.HttpReportPersister{*u, mi, &http.Client{}}
 
-	for _, entry := range entries {
-		fn := filepath.Join(crashDir, entry.Name())
-
-		if matched, _ := filepath.Match("*.crash", entry.Name()); !matched {
-			// Silently skip over the file.
-			continue
-		}
-
-		out := os.Stdout
-
-		f, err := os.Open(fn)
-		if err != nil {
-			fmt.Fprintf(out, "  %s %s: Failed to open file - %s\n", bullet, entry.Name(), err)
-			continue
-		}
-
-		defer f.Close()
-		report, err := crash.ParseReport(crash.NewLineReader{f})
-
-		if err != nil {
-			fmt.Fprintf(out, "  %s %s: Failed to parse crash report - %s\n", bullet, entry.Name(), err)
-			continue
-		}
-
-		err = persister.Persist(report)
-
-		if err != nil {
-			fmt.Fprintf(out, "  %s %s: Failed to upload crash report - %s\n", bullet, entry.Name(), err)
-			continue
-		}
-
-		if c.Bool(uploadFlagCleanup.Name) {
-			f.Close()
-			os.Remove(fn)
-		}
-
-		fmt.Fprintf(out, "  %s %s: Successfully uploaded\n", bullet, entry.Name())
-	}
+	crash.ForEachReportInDir(crashDir, UploadingVisitor{crashDir, os.Stdout, persister, c.Bool(uploadFlagCleanup.Name)})
 }
 
 // Command upload uploads crash reports to the server infrastructure
