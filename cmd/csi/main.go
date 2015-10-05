@@ -18,6 +18,7 @@ func main() {
 
 	app.Commands = []cli.Command{
 		command.Id,
+		command.Inspect,
 		command.List,
 		command.Upload,
 	}
