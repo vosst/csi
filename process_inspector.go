@@ -7,14 +7,15 @@ import (
 
 // ProcessReport bundles information about an individual process.
 type ProcessReport struct {
-	Cmdline pid.Cmdline // Command line
-	Cwd     pid.Cwd     // Current working directory
-	Env     pid.Environ // Runtime environment
-	Exe     pid.Exe     // Path to executed command
-	IO      pid.IO      // IO statistics
-	Limits  pid.Limits  // Resource limits
-	Maps    pid.Maps    // Mapped memory regions of the process
-	OomAdj  pid.OomAdj  // OomAdj factor for altering the kernel's badness heuristic
+	Cmdline  pid.Cmdline  // Command line
+	Cwd      pid.Cwd      // Current working directory
+	Env      pid.Environ  // Runtime environment
+	Exe      pid.Exe      // Path to executed command
+	IO       pid.IO       // IO statistics
+	Limits   pid.Limits   // Resource limits
+	Maps     pid.Maps     // Mapped memory regions of the process
+	OomAdj   pid.OomAdj   // OomAdj factor for altering the kernel's badness heuristic
+	OomScore pid.OomScore // Badness score of the process for OOM selection
 }
 
 type ProcessInspector struct {
@@ -70,6 +71,12 @@ func (self ProcessInspector) Inspect(id int) (*ProcessReport, error) {
 		return nil, err
 	} else {
 		pr.OomAdj = oomAdj
+	}
+
+	if oomScore, err := pid.NewOomScore(id); err != nil {
+		return nil, err
+	} else {
+		pr.OomScore = oomScore
 	}
 
 	return &pr, nil
