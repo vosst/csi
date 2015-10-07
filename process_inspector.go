@@ -7,15 +7,16 @@ import (
 
 // ProcessReport bundles information about an individual process.
 type ProcessReport struct {
-	Cmdline  pid.Cmdline  // Command line
-	Cwd      pid.Cwd      // Current working directory
-	Env      pid.Environ  // Runtime environment
-	Exe      pid.Exe      // Path to executed command
-	IO       pid.IO       // IO statistics
-	Limits   pid.Limits   // Resource limits
-	Maps     pid.Maps     // Mapped memory regions of the process
-	OomAdj   pid.OomAdj   // OomAdj factor for altering the kernel's badness heuristic
-	OomScore pid.OomScore // Badness score of the process for OOM selection
+	Cmdline     pid.Cmdline     // Command line
+	Cwd         pid.Cwd         // Current working directory
+	Env         pid.Environ     // Runtime environment
+	Exe         pid.Exe         // Path to executed command
+	IO          pid.IO          // IO statistics
+	Limits      pid.Limits      // Resource limits
+	Maps        pid.Maps        // Mapped memory regions of the process
+	OomAdj      pid.OomAdj      // OomAdj factor for altering the kernel's badness heuristic
+	OomScore    pid.OomScore    // Badness score of the process for OOM selection
+	OomScoreAdj pid.OomScoreAdj // New style adjustment factor for altering the kernel's badness heuristic
 }
 
 type ProcessInspector struct {
