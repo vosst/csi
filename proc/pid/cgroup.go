@@ -67,7 +67,7 @@ func NewCgroupFromReader(reader io.Reader) *Cgroup {
 	cg := Cgroup{}
 	br := bufio.NewReader(reader)
 
-	for line, err := br.ReadString('\n'); err == nil; line, err = br.ReadString('n') {
+	for line, err := br.ReadString('\n'); err == nil; line, err = br.ReadString('\n') {
 		if h, err := NewHierarchyFromLine(line); err == nil {
 			cg.Hierarchies = append(cg.Hierarchies, h)
 		}

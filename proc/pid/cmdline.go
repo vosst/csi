@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Cmdline describes the complete command line of a process, unless the process is a zombie.
@@ -33,8 +34,8 @@ func NewCmdlineFromReader(reader io.Reader) Cmdline {
 	br := bufio.NewReader(reader)
 	cmdline := Cmdline{}
 
-	for arg, err := br.ReadString('\x00'); err != nil; arg, err = br.ReadString('\x00') {
-		cmdline = append(cmdline, arg)
+	for arg, err := br.ReadString('\x00'); err == nil; arg, err = br.ReadString('\x00') {
+		cmdline = append(cmdline, strings.TrimRight(arg, "\x00"))
 	}
 
 	return cmdline

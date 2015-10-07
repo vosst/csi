@@ -14,6 +14,8 @@ import (
 	"strconv"
 )
 
+// ResourceLimit describes a limit on a specific resource.
+// Please see man limits
 type ResourceLimit int
 
 const (
@@ -71,6 +73,7 @@ func (self ResourceLimit) String() string {
 	return fmt.Sprintf("Unknown [%d]", self)
 }
 
+// Unit describes the unit of a resouce limit.
 type Unit string
 
 const (
@@ -84,15 +87,15 @@ const (
 	Unknown           = "unknown"
 
 	// Parses a single line from /proc/pid/limits
-	LineRegExp        = `([[:print:]]+?)\s\s+([[:digit:]]+|unlimited)\s\s+([[:digit:]]+|unlimited)\s\s+([[:alpha:]]+)`
-	SubmatchLimit     = 1
-	SubmatchSoftLimit = 2
-	SubmatchHardLimit = 3
-	SubmatchUnits     = 4
+	limitsSubmatchLimit     = 1
+	limitsSubmatchSoftLimit = 2
+	limitsSubmatchHardLimit = 3
+	limitsSubmatchUnits     = 4
 )
 
 var (
-	keys = map[string]ResourceLimit{
+	// See https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/fs/proc/base.c#n599
+	limitsKeys = map[string]ResourceLimit{
 		"Max cpu time":          CpuTime,
 		"Max file size":         FileSize,
 		"Max data size":         DataSize,
@@ -109,7 +112,9 @@ var (
 		"Max nice priority":     NicePrio,
 		"Max realtime priority": RealtimePrio,
 	}
-	lineRegExp = regexp.MustCompile(`([[:print:]]+?)\s\s+([[:digit:]]+|unlimited)\s\s+([[:digit:]]+|unlimited)\s\s+([[:alpha:]]+)?`)
+	// lineRegexp parses a single line from /proc/pid/limits.
+	// Please see https://regex101.com/r/sK7nJ0/1 for details and an overview of submatches.
+	limitsRegExp = regexp.MustCompile(`([[:print:]]+?)\s\s+([[:digit:]]+|unlimited)\s\s+([[:digit:]]+|unlimited)\s\s+([[:alpha:]]+)?`)
 )
 
 // Limit describes a limit on a resource
@@ -119,8 +124,12 @@ type Limit struct {
 	Unit Unit // Unit of measurement
 }
 
+// Limits describes all resource limits for a process
 type Limits map[ResourceLimit]*Limit
 
+// NewLimits parses the resource limits for the process identified by id
+//
+// Returns a Limits instance or an error if /proc/%{pid}/file could not be opened for reading
 func NewLimits(pid int) (Limits, error) {
 	fn := filepath.Join(Dir(pid), "limits")
 
@@ -135,34 +144,37 @@ func NewLimits(pid int) (Limits, error) {
 	return NewLimitsFromReader(f)
 }
 
+// NewLimitsFromReader parses resource limits from reader
+//
+// Returns a valid Limits instance or an error if parsing failed
 func NewLimitsFromReader(reader io.Reader) (Limits, error) {
 	limits := Limits{}
 	br := bufio.NewReader(reader)
 
 	for line, err := br.ReadString('\n'); err == nil; line, err = br.ReadString('\n') {
-		tokens := lineRegExp.FindStringSubmatch(line)
+		tokens := limitsRegExp.FindStringSubmatch(line)
 		if len(tokens) < 4 {
 			// An error occured while parsing the line
 			continue
 		}
 
-		if v, present := keys[tokens[SubmatchLimit]]; present {
+		if v, present := limitsKeys[tokens[limitsSubmatchLimit]]; present {
 			limit := Limit{nil, nil, Unknown}
 
-			if tokens[SubmatchSoftLimit] != "unlimited" {
-				if i, err := strconv.Atoi(tokens[SubmatchSoftLimit]); err == nil {
+			if tokens[limitsSubmatchSoftLimit] != "unlimited" {
+				if i, err := strconv.Atoi(tokens[limitsSubmatchSoftLimit]); err == nil {
 					limit.Soft = &i
 				}
 			}
 
-			if tokens[SubmatchHardLimit] != "unlimited" {
-				if i, err := strconv.Atoi(tokens[SubmatchHardLimit]); err == nil {
+			if tokens[limitsSubmatchHardLimit] != "unlimited" {
+				if i, err := strconv.Atoi(tokens[limitsSubmatchHardLimit]); err == nil {
 					limit.Hard = &i
 				}
 			}
 
 			if len(tokens) == 5 {
-				limit.Unit = Unit(tokens[SubmatchUnits])
+				limit.Unit = Unit(tokens[limitsSubmatchUnits])
 			}
 
 			limits[v] = &limit

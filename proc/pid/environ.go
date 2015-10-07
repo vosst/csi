@@ -2,14 +2,12 @@ package pid
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 )
 
 // Environ describes the environment of a process
@@ -27,21 +25,7 @@ func NewEnviron(pid int) (Environ, error) {
 
 	defer f.Close()
 
-	stat, err := f.Stat()
-
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Failed to stat %s [%s]", fn, err))
-	}
-
-	b, err := syscall.Mmap(int(f.Fd()), 0, int(stat.Size()), syscall.PROT_READ, syscall.MAP_PRIVATE)
-
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Failed to mmap %s [%s]", fn, err))
-	}
-
-	defer syscall.Munmap(b)
-
-	return NewEnvironFromReader(bytes.NewReader(b)), nil
+	return NewEnvironFromReader(f), nil
 }
 
 // NewEnvironFromReader reads the environment from reader.
@@ -50,9 +34,10 @@ func NewEnvironFromReader(reader io.Reader) Environ {
 
 	env := Environ{}
 
-	for arg, err := br.ReadString('\x00'); err != nil; arg, err = br.ReadString('\x00') {
-		kv := strings.Split(arg, ":")
-		env[kv[0]] = kv[1]
+	for arg, err := br.ReadString('\x00'); err == nil; arg, err = br.ReadString('\x00') {
+		if kv := strings.Split(arg, "="); len(kv) == 2 {
+			env[kv[0]] = strings.TrimRight(kv[1], "\x00")
+		}
 	}
 
 	return env
