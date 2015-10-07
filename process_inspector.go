@@ -17,6 +17,7 @@ type ProcessReport struct {
 	OomAdj      pid.OomAdj      // OomAdj factor for altering the kernel's badness heuristic
 	OomScore    pid.OomScore    // Badness score of the process for OOM selection
 	OomScoreAdj pid.OomScoreAdj // New style adjustment factor for altering the kernel's badness heuristic
+	Root        pid.Root        // Filesystem root of a process
 }
 
 type ProcessInspector struct {
@@ -78,6 +79,12 @@ func (self ProcessInspector) Inspect(id int) (*ProcessReport, error) {
 		return nil, err
 	} else {
 		pr.OomScore = oomScore
+	}
+
+	if root, err := pid.NewRoot(id); err != nil {
+		return nil, err
+	} else {
+		pr.Root = root
 	}
 
 	return &pr, nil
