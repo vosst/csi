@@ -14,6 +14,7 @@ type ProcessReport struct {
 	IO      pid.IO      // IO statistics
 	Limits  pid.Limits  // Resource limits
 	Maps    pid.Maps    // Mapped memory regions of the process
+	OomAdj  pid.OomAdj  // OomAdj factor for altering the kernel's badness heuristic
 }
 
 type ProcessInspector struct {
@@ -63,6 +64,12 @@ func (self ProcessInspector) Inspect(id int) (*ProcessReport, error) {
 		return nil, err
 	} else {
 		pr.Maps = maps
+	}
+
+	if oomAdj, err := pid.NewOomAdj(id); err != nil {
+		return nil, err
+	} else {
+		pr.OomAdj = oomAdj
 	}
 
 	return &pr, nil
