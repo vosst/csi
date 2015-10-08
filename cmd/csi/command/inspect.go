@@ -9,5 +9,5 @@ import (
 var Inspect = cli.Command{
 	Name:        "inspect",
 	Usage:       "inspects and collects information about the system and specific characteristics",
-	Subcommands: []cli.Command{inspect.System},
+	Subcommands: []cli.Command{inspect.Process, inspect.System},
 }
