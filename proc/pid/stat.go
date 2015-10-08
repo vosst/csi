@@ -9,6 +9,40 @@ import (
 	"reflect"
 )
 
+// Flags is a bitfield holding process flags.
+type Flags uint
+
+// Taken from ${KERNELSRC}/include/linux/sched.h
+const (
+	PF_EXITING        = 0x00000004 // getting shut down
+	PF_EXITPIDONE     = 0x00000008 // pi exit done on shut down
+	PF_VCPU           = 0x00000010 // I'm a virtual CPU
+	PF_WQ_WORKER      = 0x00000020 // I'm a workqueue worker
+	PF_FORKNOEXEC     = 0x00000040 // forked but didn't exec
+	PF_MCE_PROCESS    = 0x00000080 // process policy on mce errors
+	PF_SUPERPRIV      = 0x00000100 // used super-user privileges
+	PF_DUMPCORE       = 0x00000200 // dumped core
+	PF_SIGNALED       = 0x00000400 // killed by a signal
+	PF_MEMALLOC       = 0x00000800 // Allocating memory
+	PF_NPROC_EXCEEDED = 0x00001000 // set_user noticed that RLIMIT_NPROC was exceeded
+	PF_USED_MATH      = 0x00002000 // if unset the fpu must be initialized before use
+	PF_USED_ASYNC     = 0x00004000 // used async_schedule*(), used by module init
+	PF_NOFREEZE       = 0x00008000 // this thread should not be frozen
+	PF_FROZEN         = 0x00010000 // frozen for system suspend
+	PF_FSTRANS        = 0x00020000 // inside a filesystem transaction
+	PF_KSWAPD         = 0x00040000 // I am kswapd
+	PF_MEMALLOC_NOIO  = 0x00080000 // Allocating memory without IO involved
+	PF_LESS_THROTTLE  = 0x00100000 // Throttle me less: I clean memory
+	PF_KTHREAD        = 0x00200000 // I am a kernel thread
+	PF_RANDOMIZE      = 0x00400000 // randomize virtual address space
+	PF_SWAPWRITE      = 0x00800000 // Allowed to write to swap
+	PF_NO_SETAFFINITY = 0x04000000 // Userland is not allowed to meddle with cpus_allowed
+	PF_MCE_EARLY      = 0x08000000 // Early kill for mce process policy
+	PF_MUTEX_TESTER   = 0x20000000 // Thread belongs to the rt mutex tester
+	PF_FREEZER_SKIP   = 0x40000000 // Freezer should not count it as freezable
+	PF_SUSPEND_TASK   = 0x80000000 // this thread called freeze_processes and should not be frozen
+)
+
 // State describes the state of a process
 //
 // Known values are presented in constants, taken from ${KERNELSRC}/fs/proc/array.c
@@ -56,7 +90,7 @@ type Stat struct {
 	Session             int    // The session ID of the process
 	TtyNr               int    // Controlling terminal of the process
 	Tpgid               int    // ID of the foreground process of the controlling tmerinal of the process
-	Flags               uint   // Kernel flags word of the process
+	Flags               Flags  // Kernel flags word of the process
 	Minflt              uint   // Number of minor faults the process has made which have not required loading a memory page from disk
 	Cminflt             uint   // Number of minor faults that the process's waited-for children have made
 	Majflt              uint   // Number of major faults that the process's waited-for children have made
