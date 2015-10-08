@@ -23,9 +23,13 @@ type ProcessReport struct {
 	Statm       pid.Statm       // Statistics about a process's memory usage
 }
 
+// ProcessInspector inspects an individual process
 type ProcessInspector struct {
 }
 
+// Inspect inspects an individual process, returning a report on sucess and nil in case of an error.
+//
+// Returns an error in case of assembling required information fails.
 func (self ProcessInspector) Inspect(id int) (*ProcessReport, error) {
 	pr := ProcessReport{}
 
