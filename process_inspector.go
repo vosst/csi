@@ -11,6 +11,7 @@ type ProcessReport struct {
 	Cwd         pid.Cwd         // Current working directory
 	Env         pid.Environ     // Runtime environment
 	Exe         pid.Exe         // Path to executed command
+	Fd          pid.Fd          // All open fds
 	IO          pid.IO          // IO statistics
 	Limits      pid.Limits      // Resource limits
 	Maps        pid.Maps        // Mapped memory regions of the process
@@ -50,6 +51,12 @@ func (self ProcessInspector) Inspect(id int) (*ProcessReport, error) {
 		return nil, err
 	} else {
 		pr.Exe = exe
+	}
+
+	if fd, err := pid.NewFd(id); err != nil {
+		return nil, err
+	} else {
+		pr.Fd = fd
 	}
 
 	if io, err := pid.NewIO(id); err != nil {
