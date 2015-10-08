@@ -42,7 +42,6 @@ const (
 	AT_SECURE        = C.AT_SECURE        // Booleans, was exec setuid-like?
 	AT_BASE_PLATFORM = C.AT_BASE_PLATFORM // String identifying real platforms
 	AT_RANDOM        = C.AT_RANDOM        // Address of 16 random bytes
-	AT_HWCAP2        = C.AT_HWCAP2        // More machine-dependent hints about processor capabilities
 	AT_EXECFN        = C.AT_EXECFN        // Filename of executable
 	// Pointer to the global system page used for system calls and other nice things
 	AT_SYSINFO      = C.AT_SYSINFO
