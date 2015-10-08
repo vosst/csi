@@ -19,6 +19,7 @@ type ProcessReport struct {
 	OomScoreAdj pid.OomScoreAdj // New style adjustment factor for altering the kernel's badness heuristic
 	Root        pid.Root        // Filesystem root of a process
 	Stat        pid.Stat        // Statistics about a process
+	Statm       pid.Statm       // Statistics about a process's memory usage
 }
 
 type ProcessInspector struct {
@@ -89,11 +90,15 @@ func (self ProcessInspector) Inspect(id int) (*ProcessReport, error) {
 	}
 
 	if stat, err := pid.NewStat(id); err != nil {
-		fmt.Print(err)
 		return nil, err
 	} else {
 		pr.Stat = *stat
 	}
 
+	if statm, err := pid.NewStatm(id); err != nil {
+		return nil, err
+	} else {
+		pr.Statm = *statm
+	}
 	return &pr, nil
 }
