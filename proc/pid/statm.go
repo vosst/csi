@@ -20,6 +20,9 @@ type Statm struct {
 	Dt       uint // Dirty pages
 }
 
+// NewStatm reads /proc/%{pid}/statm into a Statm instance.
+//
+// Returns an error if opening /proc/%{pid}/statm or parsing an individual value fails.
 func NewStatm(pid int) (*Statm, error) {
 	fn := filepath.Join(Dir(pid), "statm")
 
@@ -34,6 +37,9 @@ func NewStatm(pid int) (*Statm, error) {
 	return NewStatmFromReader(f)
 }
 
+// NewStatmFromReader parses a Statm instance from the given reader.
+//
+// Returns an error if parsing an individual value fails.
 func NewStatmFromReader(reader io.Reader) (*Statm, error) {
 	statm := Statm{}
 
