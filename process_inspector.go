@@ -2,11 +2,14 @@ package csi
 
 import (
 	"fmt"
+	"github.com/vosst/csi/pkg"
 	"github.com/vosst/csi/proc/pid"
 )
 
 // ProcessReport bundles information about an individual process.
 type ProcessReport struct {
+	Bundle pkg.Bundle // The package/bundle the executable executed in the process belongs to
+
 	Cmdline     pid.Cmdline     // Command line
 	Cwd         pid.Cwd         // Current working directory
 	Env         pid.Environ     // Runtime environment
@@ -25,6 +28,7 @@ type ProcessReport struct {
 
 // ProcessInspector inspects an individual process
 type ProcessInspector struct {
+	PackagingSystem pkg.System // Queries into the underlying packaging system
 }
 
 // Inspect inspects an individual process, returning a report on sucess and nil in case of an error.
@@ -111,5 +115,12 @@ func (self ProcessInspector) Inspect(id int) (*ProcessReport, error) {
 	} else {
 		pr.Statm = *statm
 	}
+
+	if bundles, err := self.PackagingSystem.Resolve(string(pr.Exe)); err != nil {
+		return nil, err
+	} else if len(bundles) > 0 {
+		pr.Bundle = bundles[0]
+	}
+
 	return &pr, nil
 }
