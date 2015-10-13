@@ -2,7 +2,7 @@ language: go
 script:
         - go test -v github.com/vosst/csi/machine
         - go test -v github.com/vosst/csi/crash -httptest.serve=127.0.0.1:9090
-        - go test -v github.com/vosst/pkg/debian
+        - go test -v github.com/vosst/csi/pkg/debian
         - go install github.com/vosst/csi/cmd/csi
 notifications:
 email: false
