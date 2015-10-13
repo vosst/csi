@@ -6,10 +6,11 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/vosst/csi"
+	"github.com/vosst/csi/pkg/debian"
 )
 
 func actionSystem(context *cli.Context) {
-	si := csi.SystemInspector{}
+	si := csi.SystemInspector{debian.NewSystem()}
 	sysInfo, _ := si.Inspect()
 
 	if b, err := json.MarshalIndent(sysInfo, "", "  "); err != nil {

@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"runtime"
 	"strings"
 	"syscall"
+
+	"github.com/vosst/csi/pkg"
 )
 
 // Poor man's version of StatFs, just exposing the values we are actually interested in
@@ -145,13 +146,14 @@ func (self OSInspector) Inspect() (OSInfo, error) {
 // SystemInfo bundles system-specific information relevant
 // in reporting and tracking down issues.
 type SystemInfo struct {
-	HostName     string // HostName of this machine.
-	Architecture string // Host architecture.
-	OS           OSInfo // Information about the OS.
+	HostName     string   // HostName of this machine.
+	Architecture pkg.Arch // Host architecture.
+	OS           OSInfo   // Information about the OS.
 }
 
 // SystemInspector inspects core properties of the current system.
 type SystemInspector struct {
+	PkgSystem pkg.System // Retrievs information from the packaging system.
 }
 
 // Inspect gathers information about the current system and encodes
@@ -163,7 +165,7 @@ func (self SystemInspector) Inspect() (si SystemInfo, err error) {
 	}
 
 	si.HostName = hn
-	si.Architecture = runtime.GOARCH
+	si.Architecture, _ = self.PkgSystem.Arch()
 
 	os := OSInspector{"/etc/lsb-release", "/proc/meminfo", "/etc/mtab"}
 	si.OS, err = os.Inspect()
