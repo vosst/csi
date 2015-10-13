@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/vosst/csi"
-	"github.com/vosst/csi/pkg"
+	"github.com/vosst/csi/pkg/debian"
 	"gopkg.in/yaml.v2"
 	"os"
 	"strconv"
@@ -21,7 +21,7 @@ func actionProcess(context *cli.Context) {
 		pid, _ = strconv.Atoi(p)
 	}
 
-	pi := csi.ProcessInspector{pkg.DebianSystem{}}
+	pi := csi.ProcessInspector{debian.NewSystem()}
 	processInfo, _ := pi.Inspect(pid)
 
 	if b, err := yaml.Marshal(processInfo); err != nil {
