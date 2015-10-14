@@ -5,7 +5,6 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/golang/snappy"
 	"github.com/vosst/csi"
-	"github.com/vosst/csi/pkg/debian"
 	"gopkg.in/yaml.v2"
 	"io"
 	"log"
@@ -38,6 +37,7 @@ func actionDump(c *cli.Context) {
 	cd := c.String(dumpFlagCrashDir.Name)
 	pid := c.Int(dumpFlagPid.Name)
 	when := time.Unix(int64(c.Int(dumpFlagTime.Name)), 0)
+	sig := c.Int(dumpFlagSig.Name)
 	exe := c.String(dumpFlagExe.Name)
 
 	// Make sure that we are using a sensible umask.
@@ -52,37 +52,20 @@ func actionDump(c *cli.Context) {
 		fmt.Fprintf(c.App.Writer, "Failed to create crash directory %s [%s]\n", cd, err)
 	}
 
-	// We start over by dumping information about the system to system.yaml
-	si := csi.SystemInspector{debian.NewSystem()}
-	if sysInfo, err := si.Inspect(); err != nil {
-		fmt.Fprintf(c.App.Writer, "Failed to gather system information [%s]\n", err)
+	ci := csi.CrashInspector{}
+	if cr, err := ci.Inspect(pid, syscall.Signal(sig)); err != nil {
+		fmt.Fprintf(c.App.Writer, "Failed to gather crash meta data [%s]\n", err)
 	} else {
-		if b, err := yaml.Marshal(sysInfo); err != nil {
-			fmt.Fprintf(c.App.Writer, "Failed to write system information [%s]\n", err)
+		if b, err := yaml.Marshal(cr); err != nil {
+			fmt.Fprintf(c.App.Writer, "Failed to write crash meta data [%s]\n", err)
 		} else {
-			sy := filepath.Join(cd, "system.yaml")
-			if f, err := os.Create(sy); err != nil {
-				fmt.Fprintf(c.App.Writer, "Failed to dump system information to %s [%s]\n", sy, err)
+			ry := filepath.Join(cd, "report.yaml")
+			if f, err := os.Create(ry); err != nil {
+				fmt.Fprintf(c.App.Writer, "Failed to dump crash report to %s [%s]\n", ry, err)
 			} else {
 				defer f.Close()
 				fmt.Fprintf(f, "%s", b)
 			}
-		}
-	}
-
-	// Next we dump information about the crashed process
-	pi := csi.ProcessInspector{debian.NewSystem()}
-	processInfo, _ := pi.Inspect(pid)
-
-	if b, err := yaml.Marshal(processInfo); err != nil {
-		fmt.Fprintf(c.App.Writer, "Failed to query process information [%s] \n", err)
-	} else {
-		py := filepath.Join(cd, "process.yaml")
-		if f, err := os.Create(py); err != nil {
-			fmt.Fprintf(c.App.Writer, "Failed to dump process information to %s [%s]\n", py, err)
-		} else {
-			defer f.Close()
-			fmt.Fprintf(f, "%s", b)
 		}
 	}
 
