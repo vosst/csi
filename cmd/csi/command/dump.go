@@ -5,9 +5,9 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/golang/snappy"
 	"github.com/vosst/csi"
+	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/yaml.v2"
 	"io"
-	"log"
 	"log/syslog"
 	"os"
 	"path/filepath"
@@ -15,8 +15,20 @@ import (
 	"time"
 )
 
+// If we are invoked as a crash handler, we might not have a terminal
+// available for output. In that case, we write to a log file.
+func newDumpOutputWriter() io.Writer {
+	if terminal.IsTerminal(int(os.Stdout.Fd())) {
+		return os.Stdout
+	}
+
+	sw, _ := syslog.New(syslog.LOG_INFO|syslog.LOG_USER, "csi")
+	return sw
+}
+
 var (
-	dumpLogger, _ = syslog.NewLogger(syslog.LOG_INFO|syslog.LOG_USER, log.LstdFlags)
+	// Messages are sent to this writer
+	dumpOutputWriter = newDumpOutputWriter()
 
 	dumpFlagVerbose  = cli.BoolFlag{"verbose", "enables verbose output to syslog for debugging purposes", ""}
 	dumpFlagCompress = cli.BoolFlag{"compress", "compress the core dump with snappy", ""}
@@ -42,26 +54,23 @@ func actionDump(c *cli.Context) {
 
 	// Make sure that we are using a sensible umask.
 	oldMask := syscall.Umask(0000)
-	if verbose {
-		dumpLogger.Printf("Old umask %#o", oldMask)
-	}
 	defer syscall.Umask(oldMask)
 
 	cd = filepath.Join(cd, exe, when.Format(time.RFC3339), fmt.Sprint(pid))
 	if err := os.MkdirAll(cd, 0755); err != nil {
-		fmt.Fprintf(c.App.Writer, "Failed to create crash directory %s [%s]\n", cd, err)
+		fmt.Fprintf(dumpOutputWriter, "Failed to create crash directory %s [%s]\n", cd, err)
 	}
 
 	ci := csi.CrashInspector{}
 	if cr, err := ci.Inspect(pid, syscall.Signal(sig)); err != nil {
-		fmt.Fprintf(c.App.Writer, "Failed to gather crash meta data [%s]\n", err)
+		fmt.Fprintf(dumpOutputWriter, "Failed to gather crash meta data [%s]\n", err)
 	} else {
 		if b, err := yaml.Marshal(cr); err != nil {
-			fmt.Fprintf(c.App.Writer, "Failed to write crash meta data [%s]\n", err)
+			fmt.Fprintf(dumpOutputWriter, "Failed to write crash meta data [%s]\n", err)
 		} else {
 			ry := filepath.Join(cd, "report.yaml")
 			if f, err := os.Create(ry); err != nil {
-				fmt.Fprintf(c.App.Writer, "Failed to dump crash report to %s [%s]\n", ry, err)
+				fmt.Fprintf(dumpOutputWriter, "Failed to dump crash report to %s [%s]\n", ry, err)
 			} else {
 				defer f.Close()
 				fmt.Fprintf(f, "%s", b)
@@ -72,7 +81,7 @@ func actionDump(c *cli.Context) {
 	// And we finally dump the actual core file
 	df := filepath.Join(cd, "core")
 	if f, err := os.Create(df); err != nil {
-		fmt.Fprintf(c.App.Writer, "Failed to dump core to %s [%s]", df, err)
+		fmt.Fprintf(dumpOutputWriter, "Failed to dump core to %s [%s]", df, err)
 	} else {
 		defer f.Close()
 		// TODO(tvoss): Investigate into syscall.Sendfile and figure out a way
@@ -87,7 +96,7 @@ func actionDump(c *cli.Context) {
 		elapsed := time.Since(start)
 
 		if verbose {
-			dumpLogger.Printf("Wrote %d bytes of core dump to %s in %f seconds", n, df, elapsed.Seconds())
+			fmt.Fprintf(dumpOutputWriter, "Wrote %d bytes of core dump to %s in %f seconds", n, df, elapsed.Seconds())
 		}
 	}
 }
