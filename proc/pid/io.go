@@ -11,7 +11,10 @@ import (
 	"strings"
 )
 
-// IO summarizes I/O statistics for a process
+// IO summarizes I/O statistics for a process.
+//
+// I/O statistics are available since kernel 2.6.20 and require
+// the kernel to be configured with CONFIG_GCOV_KERNEL.
 type IO struct {
 	RChar               int // Characters read
 	WChar               int // Characters written

@@ -67,9 +67,7 @@ func (self ProcessInspector) Inspect(id int) (*ProcessReport, error) {
 		pr.Fd = fd
 	}
 
-	if io, err := pid.NewIO(id); err != nil {
-		return nil, err
-	} else {
+	if io, err := pid.NewIO(id); err == nil {
 		pr.IO = *io
 	}
 
