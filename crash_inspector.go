@@ -10,7 +10,7 @@ import (
 // Crash report bundles all meta-data about a crashed process.
 type CrashReport struct {
 	Signal  os.Signal      // Signal that caused the crash
-	System  *SystemInfo    // Information about the overall system
+	System  *SystemReport  // Information about the overall system
 	Process *ProcessReport // Information about the crashed process
 }
 
@@ -23,7 +23,7 @@ type CrashInspector struct {
 // Returns an error if either gathering system info or process-specific info fails.
 func (self CrashInspector) Inspect(pid int, signal os.Signal) (*CrashReport, error) {
 	si := SystemInspector{debian.NewSystem()}
-	sysInfo, err := si.Inspect()
+	sr, err := si.Inspect()
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Failed to gather system information [%s]\n", err))
 	}
@@ -35,5 +35,5 @@ func (self CrashInspector) Inspect(pid int, signal os.Signal) (*CrashReport, err
 		return nil, errors.New(fmt.Sprintf("Failed to gather process information [%s]\n", err))
 	}
 
-	return &CrashReport{signal, &sysInfo, pr}, nil
+	return &CrashReport{signal, &sr, pr}, nil
 }

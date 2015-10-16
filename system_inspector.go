@@ -37,7 +37,7 @@ type Mount struct {
 // query size information.
 // The function is quite robust and tries to keep on processing for as long as possible,
 // reporting partial results together with errors.
-func ParseMounts(reader io.Reader) []Mount {
+func parseMounts(reader io.Reader) []Mount {
 
 	mounts := []Mount{}
 
@@ -59,8 +59,8 @@ func ParseMounts(reader io.Reader) []Mount {
 	return mounts
 }
 
-// OSInfo summarizes information about the operating system
-type OSInfo struct {
+// OSReport summarizes information about the operating system
+type OSReport struct {
 	Name    string   // Name of the OS
 	Release string   // Relase of the OS
 	Memory  struct { // Information about total available/free memory
@@ -81,8 +81,8 @@ type OSInspector struct {
 	MTab        string
 }
 
-func (self OSInspector) Inspect() (OSInfo, error) {
-	osi := OSInfo{}
+func (self OSInspector) Inspect() (OSReport, error) {
+	osi := OSReport{}
 	{
 		f, err := os.Open(self.ReleaseFile)
 		if err != nil {
@@ -136,19 +136,19 @@ func (self OSInspector) Inspect() (OSInfo, error) {
 
 		defer f.Close()
 
-		osi.Mounts = ParseMounts(f)
+		osi.Mounts = parseMounts(f)
 
 	}
 
 	return osi, nil
 }
 
-// SystemInfo bundles system-specific information relevant
+// SystemReport bundles system-specific information relevant
 // in reporting and tracking down issues.
-type SystemInfo struct {
+type SystemReport struct {
 	HostName     string   // HostName of this machine.
 	Architecture pkg.Arch // Host architecture.
-	OS           OSInfo   // Information about the OS.
+	OS           OSReport // Information about the OS.
 }
 
 // SystemInspector inspects core properties of the current system.
@@ -158,7 +158,7 @@ type SystemInspector struct {
 
 // Inspect gathers information about the current system and encodes
 // it to encoder.
-func (self SystemInspector) Inspect() (si SystemInfo, err error) {
+func (self SystemInspector) Inspect() (si SystemReport, err error) {
 	var hn string
 	if hn, err = os.Hostname(); err != nil {
 		return
