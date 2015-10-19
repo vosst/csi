@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/vosst/csi/dmesg"
 	"github.com/vosst/csi/pkg"
 )
 
@@ -61,9 +62,10 @@ func parseMounts(reader io.Reader) []Mount {
 
 // OSReport summarizes information about the operating system
 type OSReport struct {
-	Name    string   // Name of the OS
-	Release string   // Relase of the OS
-	Memory  struct { // Information about total available/free memory
+	Name    string        // Name of the OS
+	Release string        // Relase of the OS
+	Dmesg   []dmesg.Entry // Kernel ring buffer contents.
+	Memory  struct {      // Information about total available/free memory
 		Total uint64 // Total usable RAM
 		Free  uint64 // Amound of memory currently unused
 	}
@@ -138,6 +140,10 @@ func (self OSInspector) Inspect() (OSReport, error) {
 
 		osi.Mounts = parseMounts(f)
 
+	}
+
+	if dmesg, err := dmesg.ReadAll(); err == nil {
+		osi.Dmesg = dmesg
 	}
 
 	return osi, nil
