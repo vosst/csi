@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-func facLev(v int) (Facility, Loglevel) {
+func facLev(v uint) (Facility, Loglevel) {
 	return MaskFacility(v), MaskLoglevel(v)
 }
 
@@ -54,7 +54,7 @@ func NewEntry(reader bufio.Reader) (*Entry, error) {
 	entry := Entry{}
 	if matches := dmesgLineRegExp.FindStringSubmatch(line); len(matches) >= 4 {
 		if fl, err := strconv.Atoi(matches[dmesgSmFacLev]); err == nil {
-			entry.Facility, entry.Level = facLev(fl)
+			entry.Facility, entry.Level = facLev(uint(fl))
 		}
 
 		if s, err := strconv.Atoi(matches[dmesgSmTsSec]); err == nil {

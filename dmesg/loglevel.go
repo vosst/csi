@@ -4,7 +4,7 @@ package dmesg
 import "C"
 
 // Loglevel models the kernel's loglevel (see man klogctl)
-type Loglevel int
+type Loglevel uint
 
 const (
 	LOG_EMERG   Loglevel = C.LOG_EMERG   // system is unusable
@@ -18,6 +18,6 @@ const (
 )
 
 // MaskLoglevel extracts the Loglevel from the integer value v
-func MaskLoglevel(v int) Loglevel {
+func MaskLoglevel(v uint) Loglevel {
 	return Loglevel(v & 0x07)
 }

@@ -4,7 +4,7 @@ package dmesg
 import "C"
 
 // Facility models well-known log facilities (see man klogctl)
-type Facility int
+type Facility uint
 
 const (
 	LOG_KERN     = C.LOG_KERN     // kernel messages
@@ -22,6 +22,6 @@ const (
 )
 
 // MaskFacility extracts the facility (bottom 3 bits) from the integer value v.
-func MaskFacility(v int) Facility {
+func MaskFacility(v uint) Facility {
 	return Facility((v & 0x03fb) >> 3)
 }
