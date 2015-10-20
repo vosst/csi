@@ -20,6 +20,7 @@ type Collector interface {
 type DmesgCollector struct {
 }
 
+// NewDmesgCollector returns a new DmesgCollector.
 func NewDmesgCollector() DmesgCollector {
 	return DmesgCollector{}
 }
@@ -41,6 +42,7 @@ type SyslogCollector struct {
 	fn string // File containing the syslog
 }
 
+// NewSyslogCollector returns a new SyslogCollector gathering information from /var/log/syslog.
 func NewSyslogCollector() SyslogCollector {
 	return SyslogCollector{"/var/log/syslog"}
 }
