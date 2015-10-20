@@ -75,14 +75,14 @@ func NewEntry(reader bufio.Reader) (*Entry, error) {
 //
 // Returns an error if a query to the underlying system facilities fails.
 func ReadAll() ([]byte, error) {
-	n, err := syscall.Klogctl(10, nil)
+	n, err := syscall.Klogctl(sysActionSizeBuffer, nil)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Failed to query size of log buffer [%s]", err))
 	}
 
 	b := make([]byte, n, n)
 
-	m, err := syscall.Klogctl(3, b)
+	m, err := syscall.Klogctl(sysActionReadAll, b)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Failed to read messages from log buffer [%s]", err))
 	}
