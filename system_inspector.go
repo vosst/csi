@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/vosst/csi/log"
 	"github.com/vosst/csi/pkg"
 )
 
@@ -38,7 +39,6 @@ type Mount struct {
 // The function is quite robust and tries to keep on processing for as long as possible,
 // reporting partial results together with errors.
 func parseMounts(reader io.Reader) []Mount {
-
 	mounts := []Mount{}
 
 	br := bufio.NewReader(reader)
@@ -63,7 +63,11 @@ func parseMounts(reader io.Reader) []Mount {
 type OSReport struct {
 	Name    string   // Name of the OS
 	Release string   // Relase of the OS
-	Memory  struct { // Information about total available/free memory
+	Logs    struct { // Central logs documenting the OS operations
+		Dmesg  []byte // Contents of the kernel log buffer
+		Syslog []byte // Contents of syslog
+	}
+	Memory struct { // Information about total available/free memory
 		Total uint64 // Total usable RAM
 		Free  uint64 // Amound of memory currently unused
 	}
@@ -71,14 +75,16 @@ type OSReport struct {
 		Total uint64 // Total amount of swap space available
 		Free  uint64 // Amount of swap space that is currently unused
 	}
-	Mounts []Mount
+	Mounts []Mount // All mounted filesystems
 }
 
 // OSInspector provides means to gather information about the operating system
 type OSInspector struct {
-	ReleaseFile string
-	MemInfo     string
-	MTab        string
+	DmesgCollector  log.Collector
+	SyslogCollector log.Collector
+	ReleaseFile     string
+	MemInfo         string
+	MTab            string
 }
 
 func (self OSInspector) Inspect() (OSReport, error) {
@@ -140,6 +146,14 @@ func (self OSInspector) Inspect() (OSReport, error) {
 
 	}
 
+	if b, err := self.DmesgCollector.Collect(); err == nil {
+		osi.Logs.Dmesg = b
+	}
+
+	if b, err := self.SyslogCollector.Collect(); err == nil {
+		osi.Logs.Syslog = b
+	}
+
 	return osi, nil
 }
 
@@ -167,7 +181,7 @@ func (self SystemInspector) Inspect() (si SystemReport, err error) {
 	si.HostName = hn
 	si.Architecture, _ = self.PkgSystem.Arch()
 
-	os := OSInspector{"/etc/lsb-release", "/proc/meminfo", "/etc/mtab"}
+	os := OSInspector{log.NewDmesgCollector(), log.NewSyslogCollector(), "/etc/lsb-release", "/proc/meminfo", "/etc/mtab"}
 	si.OS, err = os.Inspect()
 
 	if err != nil {
