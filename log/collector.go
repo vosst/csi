@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 
 	"github.com/vosst/csi/dmesg"
+	"github.com/vosst/csi/logcat"
 )
 
 // A Collector handles gathering of all contents of a log facility.
@@ -51,6 +52,28 @@ func (s SyslogCollector) Collect() ([]byte, error) {
 	blob, err := ioutil.ReadFile(s.fn)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Failed to collect syslog from %s [%s]", s.fn, err))
+	}
+
+	return blob, nil
+}
+
+// An AndroidCollector gathers logs from Android's logging infrastructure.
+type AndroidCollector struct {
+	Logger logcat.Logger // The Android specific log that should be read from.
+}
+
+// NewAndroidCollector returns an AndroidCollector reading from logger.
+func NewAndroidCollector(logger logcat.Logger) AndroidCollector {
+	return AndroidCollector{logger}
+}
+
+// Collect gathers all log entries in a blob.
+//
+// Returns an error if reading from the underlying Android facilities fails.
+func (a AndroidCollector) Collect() ([]byte, error) {
+	blob, err := logcat.ReadAll(a.Logger)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Failed to collect Android log from %s [%s]", a.Logger, err))
 	}
 
 	return blob, nil

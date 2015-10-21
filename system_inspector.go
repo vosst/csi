@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/vosst/csi/log"
+	"github.com/vosst/csi/logcat"
 	"github.com/vosst/csi/pkg"
 )
 
@@ -64,8 +65,14 @@ type OSReport struct {
 	Name    string   // Name of the OS
 	Release string   // Relase of the OS
 	Logs    struct { // Central logs documenting the OS operations
-		Dmesg  []byte // Contents of the kernel log buffer
-		Syslog []byte // Contents of syslog
+		Dmesg   []byte   // Contents of the kernel log buffer
+		Syslog  []byte   // Contents of syslog
+		Android struct { // All logs reported by Android facilities
+			Radio  []byte // Radio-related messages
+			Events []byte // System/hardware events
+			System []byte // System/framework messages
+			Main   []byte // Everything else
+		}
 	}
 	Memory struct { // Information about total available/free memory
 		Total uint64 // Total usable RAM
@@ -82,9 +89,15 @@ type OSReport struct {
 type OSInspector struct {
 	DmesgCollector  log.Collector
 	SyslogCollector log.Collector
-	ReleaseFile     string
-	MemInfo         string
-	MTab            string
+	Android         struct {
+		Radio  log.Collector
+		Events log.Collector
+		System log.Collector
+		Main   log.Collector
+	}
+	ReleaseFile string
+	MemInfo     string
+	MTab        string
 }
 
 func (self OSInspector) Inspect() (OSReport, error) {
@@ -154,6 +167,22 @@ func (self OSInspector) Inspect() (OSReport, error) {
 		osi.Logs.Syslog = b
 	}
 
+	if b, err := self.Android.Radio.Collect(); err == nil {
+		osi.Logs.Android.Radio = b
+	}
+
+	if b, err := self.Android.Events.Collect(); err == nil {
+		osi.Logs.Android.Events = b
+	}
+
+	if b, err := self.Android.System.Collect(); err == nil {
+		osi.Logs.Android.System = b
+	}
+
+	if b, err := self.Android.Main.Collect(); err == nil {
+		osi.Logs.Android.Main = b
+	}
+
 	return osi, nil
 }
 
@@ -181,7 +210,16 @@ func (self SystemInspector) Inspect() (si SystemReport, err error) {
 	si.HostName = hn
 	si.Architecture, _ = self.PkgSystem.Arch()
 
-	os := OSInspector{log.NewDmesgCollector(), log.NewSyslogCollector(), "/etc/lsb-release", "/proc/meminfo", "/etc/mtab"}
+	os := OSInspector{}
+	os.DmesgCollector = log.NewDmesgCollector()
+	os.SyslogCollector = log.NewSyslogCollector()
+	os.Android.Radio = log.NewAndroidCollector(logcat.RadioLogger)
+	os.Android.Events = log.NewAndroidCollector(logcat.EventsLogger)
+	os.Android.System = log.NewAndroidCollector(logcat.SystemLogger)
+	os.Android.Main = log.NewAndroidCollector(logcat.MainLogger)
+	os.ReleaseFile = "/etc/lsb-release"
+	os.MemInfo = "/proc/meminfo"
+	os.MTab = "/etc/mtab"
 	si.OS, err = os.Inspect()
 
 	if err != nil {
